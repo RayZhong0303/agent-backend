@@ -6,11 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from google import genai
 from google.genai import types
-
+from dotenv import load_dotenv
+load_dotenv()
 # ---------- 配置 ----------
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDA0E4oiMqgjROBPcmdpKO5sDt5Z0S7WQ8")
-MODEL_PLANNER  = "gemini-2.5-flash-lite"
-MODEL_WORKER   = "gemini-2.5-flash-lite"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "*")
+MODEL_PLANNER  = "gemini-2.5-flash"
+MODEL_WORKER   = "gemini-2.5-flash"
 
 app = FastAPI()
 app.add_middleware(
@@ -380,7 +381,7 @@ async def ws_handler(ws: WebSocket):
             }})
 
             await send({"type":"agent_delta", "data": {"agent": agent, "text": "信息汇总中…", "stage":"aggregate", "percent":80}})
-            await stream_agent_text(agent, narrate(agent, payload_d), delay=0.05)
+            await stream_agent_text(agent, narrate(agent, payload_d), delay=0.02)
             await send({"type":"agent_end", "data": {"agent": agent, "ok": True, "payload": payload}})
             return (agent, payload)
 
@@ -406,7 +407,7 @@ async def ws_handler(ws: WebSocket):
         await send({"type":"final_start", "data":"开始生成最终报告…"})
         final_resp = await gen_async(model=MODEL_PLANNER, contents=final_prompt, config=types.GenerateContentConfig())
         final_text = final_resp.text or "(无输出)"
-        await stream_text("final_delta", final_text, delay=0.05)  # 想打字机就设 0.01
+        await stream_text("final_delta", final_text, delay=0.02)  # 想打字机就设 0.01
         await send({"type":"final_end", "data":"报告完成"})
         await ws.close(); return
 
